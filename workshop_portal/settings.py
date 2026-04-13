@@ -145,8 +145,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'frontend', 'dist'),
 ]
 
-# Enable WhiteNoise compression and caching for fast asset delivery
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Use storage that doesn't crash if the manifest is missing
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 LOGIN_URL = '/workshop/login/'
 
