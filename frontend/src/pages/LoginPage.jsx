@@ -13,9 +13,9 @@
  */
 
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { LogIn, BookOpen, AlertCircle } from 'lucide-react';
+import { LogIn, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../api';
 import styles from './LoginPage.module.css';
 
@@ -25,6 +25,15 @@ export default function LoginPage({ onLogin }) {
   const [loading, setLoad]  = useState(false);
   const [shake, setShake]   = useState(false);
   const navigate             = useNavigate();
+  const [searchParams]       = useSearchParams();
+  const activation           = searchParams.get('activation');
+
+  const activationMsg = {
+    success: { type: 'success', text: '✅ Email verified! You can now sign in.' },
+    expired: { type: 'danger',  text: '⏰ Activation link expired. Please register again.' },
+    pending: { type: 'info',    text: '📧 Please verify your email before signing in.' },
+    already: { type: 'info',    text: '✅ Your account is already verified. Sign in below.' },
+  }[activation];
 
   function handleChange(e) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -98,6 +107,15 @@ export default function LoginPage({ onLogin }) {
             <p className={styles.subLine}>
               Welcome back — let's get you to your dashboard.
             </p>
+
+            {activationMsg && (
+              <div className={`alert alert-${activationMsg.type}`} role="status">
+                {activationMsg.type === 'success'
+                  ? <CheckCircle size={16} aria-hidden="true" />
+                  : <AlertCircle size={16} aria-hidden="true" />}
+                {activationMsg.text}
+              </div>
+            )}
 
             {error && (
               <div className="alert alert-danger" role="alert">

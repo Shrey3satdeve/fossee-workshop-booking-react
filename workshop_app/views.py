@@ -103,35 +103,36 @@ def activate_user(request, key=None):
     user = request.user
     if user.is_superuser:
         return redirect("/admin")
+
+    # React SPA base URL (same origin in dev via Vite proxy; adjust for prod)
+    REACT_LOGIN = "http://localhost:5173/login"
+
     if key is None:
         if user.is_authenticated and not user.profile.is_email_verified and \
                 timezone.now() > user.profile.key_expiry_time:
-            status = "1"
-            Profile.objects.get(user_id=user.profile.user_id).delete()
-            User.objects.get(id=user.profile.user_id).delete()
-            return render(request, 'workshop_app/activation.html',
-                          {'status': status})
+            # Key expired — delete unverified account
+            Profile.objects.filter(user_id=user.profile.user_id).delete()
+            User.objects.filter(id=user.profile.user_id).delete()
+            logout(request)
+            return redirect(REACT_LOGIN + "?activation=expired")
         elif user.is_authenticated and not user.profile.is_email_verified:
-            return render(request, 'workshop_app/activation.html')
+            return redirect(REACT_LOGIN + "?activation=pending")
         elif user.is_authenticated and user.profile.is_email_verified:
-            status = "2"
-            return render(request, 'workshop_app/activation.html',
-                          {'status': status})
+            return redirect(REACT_LOGIN + "?activation=already")
         else:
             return redirect(reverse("workshop_app:register"))
 
-    user = Profile.objects.filter(activation_key=key)
-    if user.exists():
-        user = user.first()
-    else:
+    profile = Profile.objects.filter(activation_key=key)
+    if not profile.exists():
         logout(request)
         return redirect(reverse("workshop_app:register"))
 
-    user.is_email_verified = True
-    user.save()
-    status = "0"
-    return render(request, 'workshop_app/activation.html',
-                  {"status": status})
+    profile = profile.first()
+    profile.is_email_verified = True
+    profile.save()
+    # Log the user out so they sign in fresh through the React login form
+    logout(request)
+    return redirect(REACT_LOGIN + "?activation=success")
 
 
 def user_register(request):
