@@ -18,6 +18,7 @@ urlpatterns = [
     # Workshops
     url(r'^workshops/my/$',                     api_views.api_my_workshops,          name='api_my_workshops'),
     url(r'^workshops/instructor/$',             api_views.api_instructor_workshops,  name='api_instructor_workshops'),
+    url(r'^workshops/propose/$',                api_views.api_propose_workshop,      name='api_propose_workshop'),
     url(r'^workshops/by-coordinator/(?P<user_id>\d+)/$', api_views.api_workshops_by_coordinator, name='api_workshops_by_coordinator'),
     url(r'^workshops/(?P<workshop_id>\d+)/comments/$',   api_views.api_workshop_comments,         name='api_workshop_comments'),
     url(r'^workshops/(?P<workshop_id>\d+)/$',            api_views.api_workshop_detail,           name='api_workshop_detail'),

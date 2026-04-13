@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import Q
 from django.utils import timezone
+from datetime import date as date_type
 
 from .models import Profile, User, Workshop, WorkshopType, Comment, AttachmentFile
 from .views  import is_instructor, is_email_checked
@@ -286,3 +287,85 @@ def api_profile_detail(request, user_id):
     except Profile.DoesNotExist:
         return json_err('Not found.', status=404)
     return json_ok(_profile_data(profile))
+
+
+# ─── Propose Workshop ──────────────────────────────────────────────
+
+@login_required
+@require_POST
+def api_propose_workshop(request):
+    """
+    Coordinator proposes a workshop. Mirrors the Django propose_workshop view.
+    POST params: workshop_type (id), date (YYYY-MM-DD), tnc_accepted (on)
+    """
+    user = request.user
+    if is_instructor(user):
+        return json_err('Instructors cannot propose workshops.', status=403)
+
+    # Validate workshop type
+    wt_id = request.POST.get('workshop_type', '').strip()
+    if not wt_id:
+        return json_err('Please select a workshop type.')
+    try:
+        workshop_type = WorkshopType.objects.get(id=int(wt_id))
+    except (WorkshopType.DoesNotExist, ValueError):
+        return json_err('Invalid workshop type.')
+
+    # Validate date
+    raw_date = request.POST.get('date', '').strip()
+    if not raw_date:
+        return json_err('Please select a workshop date.')
+    try:
+        from datetime import date as _date, timedelta
+        ws_date = _date.fromisoformat(raw_date)
+    except ValueError:
+        return json_err('Invalid date format. Use YYYY-MM-DD.')
+
+    min_date = timezone.now().date() + timezone.timedelta(days=3)
+    if ws_date < min_date:
+        return json_err(f'Workshop date must be at least 3 days from today (earliest: {min_date}).')
+
+    # Validate T&C
+    if request.POST.get('tnc_accepted') != 'on':
+        return json_err('You must accept the terms and conditions.')
+
+    # Deduplicate
+    if Workshop.objects.filter(
+        date=ws_date,
+        workshop_type=workshop_type,
+        coordinator=user
+    ).exists():
+        return json_err('You have already proposed this workshop type on that date.')
+
+    # Create workshop
+    workshop = Workshop.objects.create(
+        workshop_type=workshop_type,
+        date=ws_date,
+        coordinator=user,
+        tnc_accepted=True,
+        status=0,           # pending
+    )
+
+    # Email every instructor
+    instructors = Profile.objects.filter(position='instructor')
+    for inst in instructors:
+        try:
+            send_email(
+                request,
+                call_on='Proposed Workshop',
+                user_position='instructor',
+                workshop_date=str(ws_date),
+                workshop_title=str(workshop_type),
+                user_name=user.get_full_name(),
+                other_email=inst.user.email,
+                phone_number=user.profile.phone_number,
+                institute=user.profile.institute,
+            )
+        except Exception as e:
+            print(f'[api_propose_workshop] Email to {inst.user.email} failed: {e}')
+
+    return json_ok({
+        'detail':      'Workshop proposed successfully.',
+        'workshop_id': workshop.id,
+    }, status=201)
+

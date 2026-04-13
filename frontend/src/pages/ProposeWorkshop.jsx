@@ -47,12 +47,10 @@ export default function ProposeWorkshop() {
       .finally(() => setTypesLoad(false));
   }, []);
 
-  // Load T&C when type changes
+  // Load T&C from the already-fetched type data (no extra network call needed)
   useEffect(() => {
     if (!selectedType) return;
-    api.get(`/workshop/type_tnc/${selectedType.id}`)
-      .then((r) => setTnc(r.data.tnc || 'No specific terms provided.'))
-      .catch(() => setTnc('Unable to load terms. Please proceed to accept.'));
+    setTnc(selectedType.terms_and_conditions || 'No specific terms provided for this workshop type.');
   }, [selectedType]);
 
   function goNext() {
@@ -72,10 +70,10 @@ export default function ProposeWorkshop() {
         date,
         tnc_accepted: 'on',
       });
-      await api.post('/workshop/propose/', payload);
+      await api.post('/api/workshops/propose/', payload);
       navigate('/dashboard', { state: { success: 'Workshop proposed successfully!' } });
     } catch (e) {
-      setError(e.message);
+      setError(e.message || 'Failed to submit proposal. Please try again.');
     } finally {
       setLoading(false);
     }
