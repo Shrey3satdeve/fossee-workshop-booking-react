@@ -136,16 +136,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
-# Static files — WhiteNoise serves both Django admin assets AND the
-# compiled React SPA from frontend/dist/
-STATIC_URL  = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')   # collectstatic output
+# Static files (CSS, JavaScript, Images)
+# WhiteNoise serves both Django admin assets AND the compiled React SPA assets.
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'frontend', 'dist'),        # Vite build output
+    os.path.join(BASE_DIR, 'frontend', 'dist'),
 ]
 
-# WhiteNoise compression + caching
+# Enable WhiteNoise compression and caching for fast asset delivery
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 LOGIN_URL = '/workshop/login/'

@@ -6,25 +6,15 @@
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "50mb",
-        "runtime": "python3.10.x"
+        "runtime": "python3.10"
       }
-    },
-    {
-      "src": "frontend/dist/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
-    { "src": "/static/(.*)",          "dest": "/frontend/dist/$1" },
-    { "src": "/assets/(.*)",          "dest": "/frontend/dist/assets/$1" },
-    { "src": "/api/(.*)",             "dest": "/workshop_portal/wsgi.py" },
-    { "src": "/workshop/(.*)",        "dest": "/workshop_portal/wsgi.py" },
-    { "src": "/admin/(.*)",           "dest": "/workshop_portal/wsgi.py" },
-    { "src": "/data/(.*)",            "dest": "/workshop_portal/wsgi.py" },
-    { "src": "/(login|register|dashboard|instructor|propose|workshops|profile|stats)(.*)", 
-      "dest": "/frontend/dist/index.html" },
-    { "src": "/",                     "dest": "/frontend/dist/index.html" },
-    { "src": "/(.*)",                 "dest": "/workshop_portal/wsgi.py" }
+    {
+      "src": "/(.*)",
+      "dest": "workshop_portal/wsgi.py"
+    }
   ],
   "env": {
     "DJANGO_SETTINGS_MODULE": "workshop_portal.settings",
