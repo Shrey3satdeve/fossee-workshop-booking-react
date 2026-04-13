@@ -12,40 +12,35 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 
 import os
 import sys
+
+# ── Email settings ──────────────────────────────────────────────────
+# Load from local_settings.py in dev; fall back to env vars in production.
 try:
     from local_settings import (
-        EMAIL_HOST,
-        EMAIL_PORT,
-        EMAIL_HOST_USER,
-        EMAIL_HOST_PASSWORD,
-        EMAIL_USE_TLS,
-        SENDER_EMAIL
+        EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER,
+        EMAIL_HOST_PASSWORD, EMAIL_USE_TLS, SENDER_EMAIL
     )
 except ImportError:
-    # Production: get email config from environment variables
-    from decouple import config as _cfg
-    EMAIL_HOST          = _cfg('EMAIL_HOST',          default='smtp.gmail.com')
-    EMAIL_PORT          = _cfg('EMAIL_PORT',          default=587, cast=int)
-    EMAIL_HOST_USER     = _cfg('EMAIL_HOST_USER',     default='')
-    EMAIL_HOST_PASSWORD = _cfg('EMAIL_HOST_PASSWORD', default='')
-    EMAIL_USE_TLS       = _cfg('EMAIL_USE_TLS',       default=True, cast=bool)
-    SENDER_EMAIL        = _cfg('SENDER_EMAIL',        default=EMAIL_HOST_USER)
-
-from decouple import config
+    EMAIL_HOST          = os.environ.get('EMAIL_HOST',          'smtp.gmail.com')
+    EMAIL_PORT          = int(os.environ.get('EMAIL_PORT',      '587'))
+    EMAIL_HOST_USER     = os.environ.get('EMAIL_HOST_USER',     '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+    EMAIL_USE_TLS       = os.environ.get('EMAIL_USE_TLS',       'True') == 'True'
+    SENDER_EMAIL        = os.environ.get('SENDER_EMAIL',         EMAIL_HOST_USER)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
+# ── Security ────────────────────────────────────────────────────────
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'smvfixi&v4mrulp2wvxp)kwjf^yqv-3h+f+nu5m)&=o=7(nlk1'   # dev only
+)
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'smvfixi&v4mrulp2wvxp)kwjf^yqv-3h+f+nu5m)&=o=7(nlk1'
+_raw_hosts = os.environ.get('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()] or ['*']
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -97,13 +92,13 @@ WSGI_APPLICATION = 'workshop_portal.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.{0}'.format(
-            config('DB_ENGINE', default='sqlite3')
+            os.environ.get('DB_ENGINE', 'sqlite3')
         ),
-        'NAME': config('DB_NAME', default=os.path.join(BASE_DIR, 'db.sqlite3')),
-        'USER': config('DB_USER', default=''),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='')
+        'NAME': os.environ.get('DB_NAME', os.path.join(BASE_DIR, 'db.sqlite3')),
+        'USER':     os.environ.get('DB_USER',     ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST':     os.environ.get('DB_HOST',     'localhost'),
+        'PORT':     os.environ.get('DB_PORT',     ''),
     }
 }
 
