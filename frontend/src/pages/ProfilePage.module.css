@@ -1,0 +1,124 @@
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: calc(var(--sp) * 5);
+}
+
+.avatarRow {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--sp) * 3);
+  margin-bottom: calc(var(--sp) * 5);
+  flex-wrap: wrap;
+}
+
+.avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--clr-primary), hsl(250 80% 60%));
+  color: #fff;
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px hsl(218 90% 58% / 0.3);
+}
+
+.name {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--txt-primary);
+  margin-bottom: calc(var(--sp) * 0.5);
+}
+
+.position {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--clr-primary);
+  text-transform: capitalize;
+}
+
+.email {
+  font-size: var(--fs-sm);
+  color: var(--txt-muted);
+}
+
+.editBtn, .editActions {
+  margin-left: auto;
+}
+
+.editActions {
+  display: flex;
+  gap: calc(var(--sp) * 1.5);
+}
+
+/* Info grid */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.infoRow {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--sp) * 0.5);
+  padding: calc(var(--sp) * 2.5) calc(var(--sp) * 3);
+  border-bottom: 1px solid var(--border);
+}
+
+.infoRow:last-child { border-bottom: none; }
+
+.infoLabel {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--txt-muted);
+  font-weight: 500;
+}
+
+.fieldVal {
+  font-size: var(--fs-base);
+  color: var(--txt-primary);
+  font-weight: 500;
+}
+
+.empty { color: var(--txt-muted); font-style: italic; }
+
+.editInput {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: calc(var(--sp) * 0.8) calc(var(--sp) * 1.5);
+  color: var(--txt-primary);
+  font-size: var(--fs-sm);
+  outline: none;
+  width: 100%;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.editInput:focus {
+  border-color: var(--clr-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.tableWrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.tableWrap .data-table tbody tr:hover { background: var(--bg-hover); }
+
+@media (max-width: 600px) {
+  .card { padding: calc(var(--sp) * 3); }
+  .avatar { width: 56px; height: 56px; font-size: var(--fs-md); }
+  .editBtn { margin-left: 0; }
+}
