@@ -1,0 +1,127 @@
+.page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(var(--sp) * 12) calc(var(--sp) * 3) calc(var(--sp) * 8);
+  background: var(--bg-page);
+}
+
+.card {
+  width: 100%;
+  max-width: 680px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--sp) * 1.5);
+  margin-bottom: calc(var(--sp));
+}
+
+.head h1 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--txt-primary);
+}
+
+.icon {
+  display: flex;
+  color: var(--clr-primary);
+  background: hsl(218 90% 58% / 0.12);
+  padding: 8px;
+  border-radius: var(--r-sm);
+}
+
+.sub {
+  color: var(--txt-muted);
+  font-size: var(--fs-sm);
+  margin-bottom: calc(var(--sp) * 5);
+  line-height: 1.6;
+}
+
+.section {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: calc(var(--sp) * 3);
+  margin-bottom: calc(var(--sp) * 4);
+}
+
+.legend {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--clr-primary);
+  padding-inline: calc(var(--sp));
+  margin-bottom: calc(var(--sp) * 2);
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--sp) * 2);
+}
+
+@media (max-width: 500px) {
+  .twoCol { grid-template-columns: 1fr; }
+}
+
+.submit {
+  width: 100%;
+  justify-content: center;
+  padding-block: calc(var(--sp) * 1.8);
+  font-weight: 600;
+}
+
+.submit:disabled { opacity: 0.6; cursor: wait; }
+
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid hsl(0 0% 100% / 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: calc(var(--sp) * 4) 0;
+}
+
+.loginLink {
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--txt-muted);
+}
+
+/* Success card */
+.successCard {
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--sp) * 3);
+  padding: calc(var(--sp) * 6) calc(var(--sp) * 4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+}
+
+.successCard h2 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--txt-primary);
+}
+
+.successCard p {
+  color: var(--txt-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+}

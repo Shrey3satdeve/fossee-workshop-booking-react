@@ -1,0 +1,210 @@
+.page {
+  display: flex;
+  min-height: 100dvh;
+}
+
+/* ─── Left decorative panel ─────────────────────────────── */
+.panel {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    hsl(222 40% 8%) 0%,
+    hsl(218 60% 12%) 60%,
+    hsl(218 80% 16%) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--sp) * 8);
+  overflow: hidden;
+}
+
+/* Decorative dot-grid overlay */
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    hsl(218 90% 60% / 0.12) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+.panelContent {
+  position: relative;
+  z-index: 1;
+  max-width: 400px;
+}
+
+.panelLogo {
+  width: 64px; height: 64px;
+  border-radius: var(--r-lg);
+  background: hsl(218 90% 58% / 0.15);
+  border: 1px solid hsl(218 90% 58% / 0.30);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clr-primary);
+  margin-bottom: calc(var(--sp) * 4);
+}
+
+.panelTitle {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--txt-primary);
+  line-height: 1.2;
+  margin-bottom: calc(var(--sp) * 2);
+}
+
+.panelSub {
+  color: var(--txt-secondary);
+  font-size: var(--fs-base);
+  line-height: 1.7;
+  margin-bottom: calc(var(--sp) * 4);
+}
+
+.featureList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--sp) * 1.5);
+}
+
+.featureList li {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--sp) * 2);
+  color: var(--txt-secondary);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+.featureList li::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--clr-primary);
+  flex-shrink: 0;
+}
+
+/* ─── Form panel ─────────────────────────────────────────── */
+.formPanel {
+  flex: 0 0 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--sp) * 4);
+  background: var(--bg-page);
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Error shake animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-5px); }
+  80%       { transform: translateX(5px); }
+}
+
+.shake { animation: shake 0.45s var(--ease-out) both; }
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--sp) * 1.5);
+  margin-bottom: calc(var(--sp) * 1);
+}
+
+.cardHead h2 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--txt-primary);
+}
+
+.cardIcon {
+  display: flex;
+  color: var(--clr-primary);
+  background: hsl(218 90% 58% / 0.12);
+  padding: 8px;
+  border-radius: var(--r-sm);
+}
+
+.subLine {
+  color: var(--txt-muted);
+  font-size: var(--fs-sm);
+  margin-bottom: calc(var(--sp) * 4);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: calc(var(--sp) * 3);
+  margin-top: calc(var(--sp) * -1.5);
+}
+
+.forgot {
+  font-size: var(--fs-sm);
+  color: var(--txt-muted);
+}
+
+.forgot:hover { color: var(--clr-primary); }
+
+.submitBtn {
+  width: 100%;
+  justify-content: center;
+  padding-block: calc(var(--sp) * 1.8);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.submitBtn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid hsl(0 0% 100% / 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: calc(var(--sp) * 4) 0;
+}
+
+.registerPrompt {
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--txt-muted);
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .panel { display: none; }
+
+  .formPanel {
+    flex: 1;
+    padding: calc(var(--sp) * 3);
+    align-items: flex-start;
+    padding-top: calc(var(--sp) * 12);
+  }
+}
