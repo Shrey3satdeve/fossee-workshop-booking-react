@@ -52,7 +52,7 @@ function App() {
   }, []);
 
   function handleLogout() {
-    api.post('/accounts/logout/').finally(() => setUser(null));
+    api.post('/api/logout/').finally(() => setUser(null));
   }
 
   const isInstructor = user?.position === 'instructor';
@@ -128,6 +128,31 @@ function App() {
               loading ? null : user
                 ? <Navigate to={isInstructor ? '/instructor' : '/dashboard'} replace />
                 : <Navigate to="/login" replace />
+            }
+          />
+
+          {/* Statistics — embed Django stats page in an iframe so we reuse existing work */}
+          <Route
+            path="/stats"
+            element={
+              <div className="page-shell">
+                <div className="container">
+                  <h1 className="section-title" style={{ marginBottom: '1.5rem' }}>
+                    Workshop <span>Statistics</span>
+                  </h1>
+                  <iframe
+                    src="http://localhost:8000/workshop/stat/"
+                    title="Workshop Statistics"
+                    style={{
+                      width: '100%',
+                      minHeight: '80vh',
+                      border: 'none',
+                      borderRadius: 'var(--r-lg)',
+                      background: 'var(--bg-card)',
+                    }}
+                  />
+                </div>
+              </div>
             }
           />
 
