@@ -2,26 +2,81 @@
  * RegisterPage.jsx
  *
  * Registration is only for coordinators (instructors are added by admins).
- * The form uses the same floating-label pattern as login for visual consistency.
- * Fields are grouped logically: account credentials → personal info → institute.
+ * Uses select dropdowns for department, state, title and source — matching
+ * the exact choice values expected by the Django UserRegistrationForm.
  *
- * FIX: FormField is defined at module level (not inside the component) so React
- * never unmounts/remounts it on each keystroke — which was causing focus loss.
+ * FormField is defined at module level (NOT inside the component) so React
+ * never unmounts/remounts it on each keystroke (which was causing focus loss).
  */
 
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../api';
 import styles from './RegisterPage.module.css';
 
-/**
- * Module-level field component — stable identity across renders.
- * Receives value, error, and onChange as explicit props instead of
- * closing over parent state, which caused React to treat it as a new
- * component type on every parent re-render (= unmount + remount = focus loss).
- */
+// ── Choice data (mirrors Django model constants exactly) ─────────────────────
+
+const DEPARTMENTS = [
+  ['', 'Select Department'],
+  ['computer engineering',           'Computer Science'],
+  ['information technology',         'Information Technology'],
+  ['civil engineering',              'Civil Engineering'],
+  ['electrical engineering',         'Electrical Engineering'],
+  ['mechanical engineering',         'Mechanical Engineering'],
+  ['chemical engineering',           'Chemical Engineering'],
+  ['aerospace engineering',          'Aerospace Engineering'],
+  ['biosciences and bioengineering', 'Biosciences and BioEngineering'],
+  ['electronics',                    'Electronics'],
+  ['energy science and engineering', 'Energy Science and Engineering'],
+];
+
+const STATES = [
+  ['',      '---------'],
+  ['IN-AP', 'Andhra Pradesh'],
+  ['IN-AR', 'Arunachal Pradesh'],
+  ['IN-AS', 'Assam'],
+  ['IN-BR', 'Bihar'],
+  ['IN-CT', 'Chhattisgarh'],
+  ['IN-GA', 'Goa'],
+  ['IN-GJ', 'Gujarat'],
+  ['IN-HR', 'Haryana'],
+  ['IN-HP', 'Himachal Pradesh'],
+  ['IN-JK', 'Jammu and Kashmir'],
+  ['IN-JH', 'Jharkhand'],
+  ['IN-KA', 'Karnataka'],
+  ['IN-KL', 'Kerala'],
+  ['IN-MP', 'Madhya Pradesh'],
+  ['IN-MH', 'Maharashtra'],
+  ['IN-MN', 'Manipur'],
+  ['IN-ML', 'Meghalaya'],
+  ['IN-MZ', 'Mizoram'],
+  ['IN-NL', 'Nagaland'],
+  ['IN-OR', 'Odisha'],
+  ['IN-PB', 'Punjab'],
+  ['IN-RJ', 'Rajasthan'],
+  ['IN-SK', 'Sikkim'],
+  ['IN-TN', 'Tamil Nadu'],
+  ['IN-TG', 'Telangana'],
+  ['IN-TR', 'Tripura'],
+  ['IN-UT', 'Uttarakhand'],
+  ['IN-UP', 'Uttar Pradesh'],
+  ['IN-WB', 'West Bengal'],
+  ['IN-AN', 'Andaman and Nicobar Islands'],
+  ['IN-CH', 'Chandigarh'],
+  ['IN-DN', 'Dadra and Nagar Haveli'],
+  ['IN-DD', 'Daman and Diu'],
+  ['IN-DL', 'Delhi'],
+  ['IN-LD', 'Lakshadweep'],
+  ['IN-PY', 'Puducherry'],
+];
+
+const TITLES  = ['Professor', 'Doctor', 'Shriman', 'Shrimati', 'Kumari', 'Mr', 'Mrs', 'Miss'];
+const SOURCES = ['FOSSEE website', 'Google', 'Social Media', 'From other College'];
+
+// ── Reusable field components (module-level = stable identity) ───────────────
+
 function FormField({ name, label, type = 'text', autoComplete, value, error, onChange }) {
   return (
     <div className={`field-wrap ${value ? 'has-value' : ''}`}>
@@ -34,26 +89,39 @@ function FormField({ name, label, type = 'text', autoComplete, value, error, onC
         onChange={onChange}
       />
       <label htmlFor={name}>{label}</label>
-      {error && (
-        <p className="field-error">
-          <AlertCircle size={12} /> {error}
-        </p>
-      )}
+      {error && <p className="field-error"><AlertCircle size={12} /> {error}</p>}
     </div>
   );
 }
 
+function SelectField({ name, label, options, value, error, onChange }) {
+  return (
+    <div className={`field-wrap ${value ? 'has-value' : ''}`}>
+      <select id={name} name={name} value={value} onChange={onChange}>
+        {options.map(([val, display]) => (
+          <option key={val} value={val}>{display}</option>
+        ))}
+      </select>
+      <label htmlFor={name}>{label}</label>
+      {error && <p className="field-error"><AlertCircle size={12} /> {error}</p>}
+    </div>
+  );
+}
+
+// ── Page component ────────────────────────────────────────────────────────────
+
 export default function RegisterPage() {
-  const navigate = useNavigate();
-  const [step, setStep]     = useState(0);   // 0: form, 1: email sent
+  const [step, setStep]     = useState(0);
   const [loading, setLoad]  = useState(false);
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
-    username: '',     password: '',   confirm: '',
-    first_name: '',   last_name: '',  email: '',
-    phone_number: '', institute: '',  department: '',
-    position: 'coordinator', location: '', state: '',
+    username: '',   password: '',   confirm_password: '',
+    title: 'Mr',
+    first_name: '', last_name: '',
+    email: '',      phone_number: '',
+    institute: '',  department: '', location: '', state: '',
+    how_did_you_hear_about_us: 'FOSSEE website',
   });
 
   function handleChange(field) {
@@ -66,15 +134,17 @@ export default function RegisterPage() {
 
   function validate() {
     const errs = {};
-    if (!form.username)     errs.username     = 'Username is required';
-    if (!form.password)     errs.password     = 'Password is required';
-    if (form.password !== form.confirm)
-                            errs.confirm      = 'Passwords do not match';
-    if (!form.email)        errs.email        = 'Email is required';
-    if (!form.first_name)   errs.first_name   = 'First name is required';
-    if (!form.last_name)    errs.last_name    = 'Last name is required';
-    if (!form.institute)    errs.institute    = 'Institute is required';
-    if (!form.phone_number) errs.phone_number = 'Phone number is required';
+    if (!form.username)     errs.username          = 'Username is required';
+    if (!form.password)     errs.password          = 'Password is required';
+    if (form.password !== form.confirm_password)
+                            errs.confirm_password  = 'Passwords do not match';
+    if (!form.email)        errs.email             = 'Email is required';
+    if (!form.first_name)   errs.first_name        = 'First name is required';
+    if (!form.last_name)    errs.last_name         = 'Last name is required';
+    if (!form.institute)    errs.institute         = 'Institute is required';
+    if (!form.phone_number) errs.phone_number      = 'Phone number is required';
+    if (!form.department)   errs.department        = 'Please select a department';
+    if (!form.state)        errs.state             = 'Please select a state';
     return errs;
   }
 
@@ -85,12 +155,10 @@ export default function RegisterPage() {
 
     setLoad(true);
     try {
-      // Ensure CSRF cookie exists before POST
       await api.get('/api/csrf/');
       await api.post('/api/register/', new URLSearchParams(form));
       setStep(1);
     } catch (err) {
-      // Handle field-level errors returned from the API
       if (err.response?.data?.errors) {
         setErrors(err.response.data.errors);
       } else {
@@ -101,30 +169,27 @@ export default function RegisterPage() {
     }
   }
 
-  // Shorthand so JSX stays readable
+  // Shorthands
   const f = (name, label, extra = {}) => (
-    <FormField
-      name={name}
-      label={label}
-      value={form[name]}
-      error={errors[name]}
-      onChange={handleChange(name)}
-      {...extra}
-    />
+    <FormField name={name} label={label} value={form[name]}
+               error={errors[name]} onChange={handleChange(name)} {...extra} />
+  );
+  const s = (name, label, options) => (
+    <SelectField name={name} label={label} options={options}
+                 value={form[name]} error={errors[name]} onChange={handleChange(name)} />
   );
 
+  // ── Success state ────────────────────────────────────────────────────────────
   if (step === 1) {
     return (
       <main className={styles.page}>
-        <Helmet>
-          <title>Registration Pending — FOSSEE Workshops</title>
-        </Helmet>
+        <Helmet><title>Registration Pending — FOSSEE Workshops</title></Helmet>
         <div className={styles.successCard}>
           <CheckCircle size={48} color="var(--clr-accent)" />
           <h2>Check your inbox!</h2>
           <p>
             We've sent a verification email to <strong>{form.email}</strong>.
-            Click the link in the email to activate your account before signing in.
+            Click the link in the email to activate your account.
           </p>
           <Link to="/login" className="btn btn-primary">Go to Sign In</Link>
         </div>
@@ -132,6 +197,7 @@ export default function RegisterPage() {
     );
   }
 
+  // ── Form ─────────────────────────────────────────────────────────────────────
   return (
     <>
       <Helmet>
@@ -157,39 +223,47 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} noValidate>
-            {/* ── Account Credentials ─────────────────── */}
+
+            {/* ── Account Credentials ─────────────────────────────── */}
             <fieldset className={styles.section}>
               <legend className={styles.legend}>Account Credentials</legend>
               {f('username', 'Username', { autoComplete: 'username' })}
               <div className={styles.twoCol}>
-                {f('password', 'Password',         { type: 'password', autoComplete: 'new-password' })}
-                {f('confirm',  'Confirm Password',  { type: 'password', autoComplete: 'new-password' })}
+                {f('password',         'Password',         { type: 'password', autoComplete: 'new-password' })}
+                {f('confirm_password', 'Confirm Password', { type: 'password', autoComplete: 'new-password' })}
               </div>
             </fieldset>
 
-            {/* ── Personal Information ─────────────────── */}
+            {/* ── Personal Information ─────────────────────────────── */}
             <fieldset className={styles.section}>
               <legend className={styles.legend}>Personal Information</legend>
+              <div className={styles.twoCol}>
+                {s('title', 'Title', TITLES.map(t => [t, t]))}
+                {f('phone_number', 'Phone Number', { type: 'tel', autoComplete: 'tel' })}
+              </div>
               <div className={styles.twoCol}>
                 {f('first_name', 'First Name', { autoComplete: 'given-name' })}
                 {f('last_name',  'Last Name',  { autoComplete: 'family-name' })}
               </div>
-              {f('email',        'Email Address', { type: 'email', autoComplete: 'email' })}
-              {f('phone_number', 'Phone Number',  { type: 'tel',   autoComplete: 'tel' })}
+              {f('email', 'Email Address', { type: 'email', autoComplete: 'email' })}
             </fieldset>
 
-            {/* ── Institute Details ────────────────────── */}
+            {/* ── Institute Details ────────────────────────────────── */}
             <fieldset className={styles.section}>
               <legend className={styles.legend}>Institute Details</legend>
               {f('institute', 'Institute Name')}
               <div className={styles.twoCol}>
-                {f('department', 'Department')}
-                {f('position',   'Position / Role')}
+                {s('department', 'Department',   DEPARTMENTS)}
+                {f('location',   'City',         { autoComplete: 'address-level2' })}
               </div>
-              <div className={styles.twoCol}>
-                {f('location', 'City',  { autoComplete: 'address-level2' })}
-                {f('state',    'State', { autoComplete: 'address-level1' })}
-              </div>
+              {s('state', 'State', STATES)}
+            </fieldset>
+
+            {/* ── How did you hear ─────────────────────────────────── */}
+            <fieldset className={styles.section}>
+              <legend className={styles.legend}>One More Thing</legend>
+              {s('how_did_you_hear_about_us', 'How did you hear about us?',
+                 SOURCES.map(src => [src, src]))}
             </fieldset>
 
             <button

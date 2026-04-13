@@ -247,7 +247,7 @@ input, select, textarea {
 /* Floated label state */
 .field-wrap.has-value label,
 .field-wrap input:focus ~ label,
-.field-wrap select:focus ~ label,
+.field-wrap select ~ label,       /* selects always show floated label */
 .field-wrap textarea:focus ~ label {
   top: calc(var(--sp) * 0.6);
   transform: none;
@@ -255,6 +255,17 @@ input, select, textarea {
   color: var(--clr-primary);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* Select appearance */
+.field-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a99' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right calc(var(--sp) * 2) center;
+  padding-right: calc(var(--sp) * 5);
+  cursor: pointer;
 }
 
 .field-wrap textarea {
