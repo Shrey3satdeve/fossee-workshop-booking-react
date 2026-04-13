@@ -85,11 +85,17 @@ export default function RegisterPage() {
 
     setLoad(true);
     try {
-      const payload = new URLSearchParams(form);
-      await api.post('/workshop/register/', payload);
+      // Ensure CSRF cookie exists before POST
+      await api.get('/api/csrf/');
+      await api.post('/api/register/', new URLSearchParams(form));
       setStep(1);
     } catch (err) {
-      setErrors({ _global: err.response?.data?.error || err.message });
+      // Handle field-level errors returned from the API
+      if (err.response?.data?.errors) {
+        setErrors(err.response.data.errors);
+      } else {
+        setErrors({ _global: err.response?.data?.error || err.message });
+      }
     } finally {
       setLoad(false);
     }

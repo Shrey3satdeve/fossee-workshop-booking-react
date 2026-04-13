@@ -33,18 +33,21 @@ export default function LoginPage({ onLogin }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!form.username || !form.password) {
+      setError('Please enter your username and password.');
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
     setLoad(true);
     setError('');
     try {
-      const res = await api.post('/accounts/login/', new URLSearchParams(form));
-      // Django redirects on success; on success the response URL won't be /login
-      if (res.request?.responseURL?.includes('/login')) {
-        throw new Error('Invalid username or password.');
-      }
-      // Fetch current user info
-      const userRes = await api.get('/api/me/');
-      onLogin(userRes.data);
-      const dest = userRes.data.position === 'instructor' ? '/instructor' : '/dashboard';
+      // Ensure CSRF cookie is set first
+      await api.get('/api/csrf/');
+      // Use our JSON login endpoint
+      const res = await api.post('/api/login/', new URLSearchParams(form));
+      onLogin(res.data);
+      const dest = res.data.position === 'instructor' ? '/instructor' : '/dashboard';
       navigate(dest, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');

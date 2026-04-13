@@ -1,26 +1,27 @@
 """
-api_views.py
-============
-Thin JSON API layer for the React frontend.
+api_views.py  (updated)
+=======================
+JSON API layer for the React frontend.
 
-Design decisions:
-- These views return JSON only — the existing template-based views are
-  UNTOUCHED so the original site continues to work in parallel.
-- We use Django's existing model layer and authentication decorators rather
-  than adding DRF, keeping dependencies minimal and the code reviewable.
-- All responses follow the same shape: either a dict (detail) or a list
-  (collection), matching what the React pages expect.
+Changes in this update:
+- Added api_register: handles coordinator signup, sends activation email, returns JSON
+- Added api_login: authenticates, checks email verification, returns JSON
+- Added api_logout: clears session, returns JSON
+- All other existing endpoints unchanged
 """
 
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import Q
 from django.utils import timezone
 
 from .models import Profile, User, Workshop, WorkshopType, Comment, AttachmentFile
 from .views  import is_instructor, is_email_checked
+from .forms  import UserRegistrationForm, UserLoginForm
+from .send_mails import send_email
 
 
 # ─── helpers ─────────────────────────────────────────────────────
@@ -33,7 +34,6 @@ def json_err(msg, status=400):
 
 
 def _workshop_data(w):
-    """Serialise a Workshop model instance to a dict."""
     return {
         'id':                w.id,
         'workshop_type_id':  w.workshop_type_id,
@@ -80,7 +80,7 @@ def _workshop_type_data(wt):
         'id':                  wt.id,
         'name':                wt.name,
         'duration':            wt.duration,
-        'description':         wt.description if hasattr(wt, 'description') else '',
+        'description':         getattr(wt, 'description', ''),
         'terms_and_conditions': wt.terms_and_conditions,
         'attachments': [
             {'url': a.attachments.url, 'name': a.attachments.name.split('/')[-1]}
@@ -91,26 +91,94 @@ def _workshop_type_data(wt):
 
 # ─── Auth ─────────────────────────────────────────────────────────
 
+@ensure_csrf_cookie
+def api_csrf(request):
+    """GET this endpoint to set the csrftoken cookie before any POST."""
+    return json_ok({'detail': 'CSRF cookie set.'})
+
+
 def api_me(request):
     """Return current authenticated user info, or 401."""
     if not request.user.is_authenticated:
         return json_err('Not authenticated.', status=401)
     u = request.user
     return json_ok({
-        'id':         u.id,
-        'username':   u.username,
-        'first_name': u.first_name,
-        'last_name':  u.last_name,
-        'email':      u.email,
-        'position':   'instructor' if is_instructor(u) else 'coordinator',
+        'id':              u.id,
+        'username':        u.username,
+        'first_name':      u.first_name,
+        'last_name':       u.last_name,
+        'email':           u.email,
+        'position':        'instructor' if is_instructor(u) else 'coordinator',
+        'email_verified':  is_email_checked(u),
     })
+
+
+@require_POST
+def api_login(request):
+    """Authenticate user and start a session. Returns user info or error."""
+    form = UserLoginForm(request.POST)
+    if form.is_valid():
+        user = form.cleaned_data
+        if not user.profile.is_email_verified:
+            return json_err(
+                'Your email address is not verified. '
+                'Please check your inbox for the activation link.',
+                status=403
+            )
+        login(request, user)
+        return json_ok({
+            'id':         user.id,
+            'username':   user.username,
+            'first_name': user.first_name,
+            'last_name':  user.last_name,
+            'email':      user.email,
+            'position':   'instructor' if is_instructor(user) else 'coordinator',
+        })
+    # Collect form errors into a readable string
+    errors = []
+    for field, msgs in form.errors.items():
+        errors.extend(msgs)
+    return json_err(' '.join(errors) or 'Invalid username or password.', status=401)
+
+
+@require_POST
+def api_logout(request):
+    logout(request)
+    return json_ok({'detail': 'Logged out.'})
+
+
+@require_POST
+def api_register(request):
+    """Register a new coordinator and send the activation email."""
+    form = UserRegistrationForm(request.POST)
+    if form.is_valid():
+        username, password, key = form.save()
+        new_user = authenticate(username=username, password=password)
+        if new_user:
+            login(request, new_user)
+            try:
+                send_email(
+                    request,
+                    call_on='Registration',
+                    user_position=new_user.profile.position,
+                    key=key,
+                )
+            except Exception as e:
+                # Email failure should NOT block registration success
+                print(f'[api_register] Email send failed: {e}')
+        return json_ok({'detail': 'Registration successful. Activation email sent.'}, status=201)
+
+    # Return human-readable form errors
+    errors = {}
+    for field, msgs in form.errors.items():
+        errors[field] = ' '.join(msgs)
+    return JsonResponse({'errors': errors}, status=400)
 
 
 # ─── Workshops ─────────────────────────────────────────────────────
 
 @login_required
 def api_my_workshops(request):
-    """Coordinator: their own workshops."""
     if is_instructor(request.user):
         return json_err('Not a coordinator.', status=403)
     ws = Workshop.objects.filter(coordinator=request.user).order_by('-date')
@@ -119,7 +187,6 @@ def api_my_workshops(request):
 
 @login_required
 def api_instructor_workshops(request):
-    """Instructor: accepted + pending list."""
     if not is_instructor(request.user):
         return json_err('Not an instructor.', status=403)
     today = timezone.now().date()
@@ -151,7 +218,7 @@ def api_workshop_comments(request, workshop_id):
         if not text:
             return json_err('Comment cannot be empty.')
         if not is_instructor(request.user):
-            public = True   # coordinators always post publicly
+            public = True
         c = Comment.objects.create(
             comment=text,
             author=request.user,
@@ -161,7 +228,6 @@ def api_workshop_comments(request, workshop_id):
         )
         return json_ok(_comment_data(c), status=201)
 
-    # GET
     qs = Comment.objects.filter(workshop=w)
     if not is_instructor(request.user):
         qs = qs.filter(public=True)

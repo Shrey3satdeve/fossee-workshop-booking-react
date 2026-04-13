@@ -36,16 +36,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Surface Django's non-field error messages cleanly
+// Surface Django's error messages cleanly, but preserve err.response
+// so callers can inspect err.response.data.errors for field-level validation.
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     const msg =
       err.response?.data?.detail ||
-      err.response?.data?.error ||
+      err.response?.data?.error  ||
       err.message ||
       'An unexpected error occurred.';
-    return Promise.reject(new Error(msg));
+    const enhanced = new Error(msg);
+    enhanced.response = err.response;   // keep the full response for field errors
+    enhanced.status   = err.response?.status;
+    return Promise.reject(enhanced);
   }
 );
 
