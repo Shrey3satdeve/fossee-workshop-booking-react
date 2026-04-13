@@ -12,14 +12,24 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 
 import os
 import sys
-from local_settings import (
-    EMAIL_HOST,
-    EMAIL_PORT,
-    EMAIL_HOST_USER,
-    EMAIL_HOST_PASSWORD,
-    EMAIL_USE_TLS,
-    SENDER_EMAIL
-)
+try:
+    from local_settings import (
+        EMAIL_HOST,
+        EMAIL_PORT,
+        EMAIL_HOST_USER,
+        EMAIL_HOST_PASSWORD,
+        EMAIL_USE_TLS,
+        SENDER_EMAIL
+    )
+except ImportError:
+    # Production: get email config from environment variables
+    from decouple import config as _cfg
+    EMAIL_HOST          = _cfg('EMAIL_HOST',          default='smtp.gmail.com')
+    EMAIL_PORT          = _cfg('EMAIL_PORT',          default=587, cast=int)
+    EMAIL_HOST_USER     = _cfg('EMAIL_HOST_USER',     default='')
+    EMAIL_HOST_PASSWORD = _cfg('EMAIL_HOST_PASSWORD', default='')
+    EMAIL_USE_TLS       = _cfg('EMAIL_USE_TLS',       default=True, cast=bool)
+    SENDER_EMAIL        = _cfg('SENDER_EMAIL',        default=EMAIL_HOST_USER)
 
 from decouple import config
 
@@ -54,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -130,9 +141,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
-STATIC_URL = '/static/'
+# Static files — WhiteNoise serves both Django admin assets AND the
+# compiled React SPA from frontend/dist/
+STATIC_URL  = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')   # collectstatic output
 
-STATIC_ROOT = 'workshop_app/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'frontend', 'dist'),        # Vite build output
+]
+
+# WhiteNoise compression + caching
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 LOGIN_URL = '/workshop/login/'
 
@@ -168,3 +187,11 @@ LOGIN_REDIRECT_URL = '/workshop/login'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_AGE = 3600
+
+# ── Production overrides ────────────────────────────────────────────
+import os as _os
+if _os.environ.get('DJANGO_ENV') == 'production':
+    try:
+        from production_settings import *  # noqa
+    except ImportError:
+        pass

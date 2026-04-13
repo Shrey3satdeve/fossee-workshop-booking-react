@@ -42,6 +42,20 @@ db.sqlite3
 #Vim
 *.swp
 
-#images/gif
-*.png
+#images/gif — NOTE: only ignoring project images, NOT frontend/dist assets
 *.gif
+
+# Python virtual environment
+venv310/
+venv/
+.venv/
+
+# Node
+frontend/node_modules/
+node_modules/
+
+# Django collectstatic output (generated on server)
+staticfiles/
+
+# OS
+Thumbs.db
