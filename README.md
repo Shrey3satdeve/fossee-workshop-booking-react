@@ -1,7 +1,29 @@
 # FOSSEE Workshop Booking — React UI/UX Redesign
 
-A complete frontend rebuild of the FOSSEE Workshop Booking platform using **React + Vite**,
-replacing a minimal Bootstrap 4 / Django-template UI with a responsive, accessible, dark-themed SPA.
+A complete frontend rebuild of the FOSSEE Workshop Booking platform using **React + Vite**, replacing a minimal Bootstrap 4 / Django-template UI with a responsive, accessible, dark-themed SPA.
+
+---
+
+## Screenshots
+
+### Login Page — Desktop
+> Split layout: brand story on the left, compact floating-label form on the right. Decorative dot-grid background with glassmorphic navbar.
+
+![Login Page Desktop](docs/screenshots/login_desktop.png)
+
+---
+
+### Login Page — Mobile (390px · iPhone 14)
+> Decorative panel completely hidden on mobile. The form fills the screen with correct touch-target sizing (≥ 44px per element). Hamburger menu appears in top-right.
+
+![Login Page Mobile](docs/screenshots/login_mobile.png)
+
+---
+
+### Registration Page — Desktop
+> Three logical `<fieldset>` sections (Account Credentials → Personal Information → Institute Details) arranged in a two-column responsive grid. Each section has a coloured legend label.
+
+![Register Page](docs/screenshots/register.png)
 
 ---
 
@@ -13,10 +35,6 @@ replacing a minimal Bootstrap 4 / Django-template UI with a responsive, accessib
 ### 1. Django Backend
 
 ```bash
-# Clone the repo (if you haven't already)
-git clone <your-repo-url>
-cd workshop_booking
-
 # Create and activate a virtual environment
 python -m venv venv
 source venv/bin/activate       # Windows: venv\Scripts\activate
@@ -31,6 +49,7 @@ cp .sampleenv .env
 python manage.py migrate
 python manage.py runserver
 ```
+
 Django runs on **http://127.0.0.1:8000**
 
 ### 2. React Frontend (development)
@@ -40,160 +59,111 @@ cd frontend
 npm install
 npm run dev
 ```
+
 React dev server runs on **http://localhost:5173**
 
-The Vite dev server proxies `/api/*`, `/workshop/*`, and `/accounts/*` to Django,
-so session cookies are shared on the same effective origin.
+The Vite dev server proxies `/api/*`, `/workshop/*`, and `/accounts/*` to Django, so session cookies work on the same effective origin.
 
 ### 3. Production Build
 
 ```bash
 cd frontend
 npm run build
-# Serve frontend/dist/ via Django's staticfiles or any HTTP server
+# frontend/dist/ can be served via Django staticfiles or any web server
 ```
-
----
-
-## Before & After Screenshots
-
-### Login Page
-
-| Before (Django template) | After (React SPA) |
-|---|---|
-| Plain white Bootstrap card, stacked labels, no visual identity | Dark split-panel layout — brand story on left, compact floating-label form on right |
-
-**After — Desktop:**
-
-![Login page desktop](docs/screenshots/after_login_desktop.png)
-
-**After — Mobile (390px):**
-
-![Login page mobile](docs/screenshots/after_login_mobile.png)
-
-**Key changes:**
-- Decorative left panel disappears on mobile (zero wasted screen space)
-- Hamburger menu slides the nav in from the top (no modal overlay)
-- Floating labels reduce form height by ~38% vs stacked label+input
-
----
-
-### Registration Page
-
-**After:**
-
-![Register page](docs/screenshots/after_register.png)
-
-**Key changes:**
-- Three logical fieldset sections (Credentials → Personal → Institute) instead of one flat table
-- Two-column grid for related fields collapses to single column on small screens
-- Inline field-level error messages, email confirmation state without page reload
 
 ---
 
 ## What Design Principles Guided Your Improvements?
 
-### 1. Information hierarchy over decoration
+### 1. Information hierarchy through reserved colour semantics
 
-Every visual decision has a reason. The primary colour (cool indigo, `hsl(218 90% 58%)`) is
-reserved exclusively for interactive elements — links, focus rings, active states — so users
-immediately know what is clickable. The accent colour (emerald, `hsl(158 72% 42%)`) appears
-only on the single highest-priority CTA per page. Nothing else is green.
+Every visual decision has a deliberate reason. The **primary colour** (cool indigo, `hsl(218 90% 58%)`) is used **exclusively** for interactive elements — links, focus rings, active nav states, primary buttons. The **accent colour** (emerald, `hsl(158 72% 42%)`) appears only on the single highest-priority CTA per screen. Nothing else is green.
 
-This is the opposite of the original Bootstrap theme, which uses `btn-primary` (blue) for
-every button regardless of hierarchy, diluting its meaning.
+This contrasts sharply with the original site, which used Bootstrap's default `btn-primary` blue for every single button regardless of importance — diluting its ability to guide the user's eye toward what matters.
 
-### 2. Three-layer depth model (no shadows on static cards)
+### 2. Three-layer depth model (no shadows on static elements)
 
-Backgrounds use three HSL lightness values to create perceived depth without `box-shadow`:
+Instead of `box-shadow` on every card (which lags on low-end Android GPUs during scroll), depth is created purely through three background lightness levels:
 
 | Layer | CSS variable | Lightness | Use |
 |---|---|---|---|
-| Page | `--bg-page` | 6% | True background |
-| Surface | `--bg-surface` | 10% | Form backgrounds, sidebars |
+| Page | `--bg-page` | 6% | The true background |
+| Surface | `--bg-surface` | 10% | Form wrappers, sidebars |
 | Card | `--bg-card` | 13% | Elevated content |
 
-`box-shadow` is only added on `card:hover` — a deliberate cost paid only on user intent.
-On low-end Android devices (the dominant student device in India), GPU compositing for
-shadows on every static card causes noticeable scroll jank.
+Cards appear "lifted" without any shadow cost. `box-shadow` is only triggered on `card:hover` — paid when the user shows intent.
 
 ### 3. Dark theme for the target audience
 
-Students attending or coordinating workshops are often doing so during or between long
-sessions staring at screens. A dark theme reduces eye strain and renders better on AMOLED
-panels (common in budget Android phones sold in India), where true-black pixels are
-literally turned off to save battery.
+Students in India predominantly use mid-range Android phones with AMOLED displays, where true-black pixels are physically turned off to save battery. A dark background (`hsl(222 22% 6%)`) is not just aesthetic — it directly lowers power consumption during long workshop sessions. It also reduces eye strain under fluorescent classroom lighting.
 
-### 4. Contextual feedback, not just validation
+### 4. Contextual feedback before submission
 
-The original forms showed errors only after submission. The new UI:
-- Floating labels signal state changes as the user types
-- Password mismatch shows inline before submit
-- The "shake" animation on login failure gives immediate kinesthetic feedback without
-  an intrusive modal or a page reload
-- The pending badge has an animated amber dot — users understand "this needs action"
-  without reading any text
+The original site surfaced errors only after a full POST round-trip. The redesign provides:
+- **Floating labels** that lift and colour on focus — instant field-state awareness
+- **Inline password mismatch** shown before the user even reaches the submit button
+- **Shake animation** on login failure — kinesthetic feedback without a modal interrupt
+- **Pending badge** with an animated amber pulse dot — urgency communicated without text
 
-### 5. Reduce options to increase action
+### 5. Reduce decisions to increase action
 
-The multi-step propose-workshop flow forces the user to *read about the workshop type*
-on step 1 before they can pick a date on step 2. The original site showed a dropdown,
-a datepicker, and a T&C checkbox on one screen — coordinators could and did check the
-T&C box without reading anything. Step 3 now shows the actual terms text above the
-checkbox, in a scrollable box.
+The multi-step Propose Workshop flow breaks a dense single form into three focused screens:
+1. **Pick Workshop Type** — forces reading before selecting
+2. **Choose Date** — shows the selected workshop name as context above the picker
+3. **Review & Confirm** — renders the actual T&C text (not just a checkbox), then a full summary card before submit
+
+The original site relied on users consciously reading a checkbox label. Coordinators almost never did.
 
 ---
 
 ## How Did You Ensure Responsiveness Across Devices?
 
-### Breakpoint strategy
+### Breakpoint system
 
-| Breakpoint | Changes |
+| Breakpoint | Layout changes |
 |---|---|
-| ≥ 769px | Full navbar links, 3-column card grids, split login layout |
-| ≤ 768px | Hamburger menu, 1–2 column grids, decorative panels hidden |
-| ≤ 600px | **Tables collapse to `display: grid` card rows** with `data-label` headers |
+| ≥ 769px | Desktop nav links visible; 3-col card grids; split login panel |
+| ≤ 768px | Hamburger menu; 1–2 col grids; decorative panels hidden |
+| ≤ 600px | Data tables collapse to `display: grid` card rows |
 | ≤ 480px | Two-column form grids drop to single column |
 
-All breakpoints use CSS `max-width` media queries — **zero JavaScript resize listeners**.
+All breakpoints are CSS `max-width` media queries — **zero JavaScript resize listeners**.
 
-### Tables → cards on mobile
+### Tables → stacked cards on mobile (pure CSS)
 
-The original site's key data views (workshop lists, profiles, status pages) all used
-multi-column `<table>` elements. On a 375px screen these require horizontal scroll and
-column text squashes to illegibility.
-
-The solution is purely declarative CSS:
+Every data table in the original Django templates was illegible on mobile. The fix:
 
 ```css
 @media (max-width: 600px) {
   .data-table thead { display: none; }
+
   .data-table tbody tr {
     display: grid;
     grid-template-columns: 1fr;
-    /* ... card styles */
+    background: var(--bg-card);
+    border-radius: var(--r-md);
+    /* ... */
   }
+
   .data-table tbody td::before {
-    content: attr(data-label); /* column label as micro-heading */
+    content: attr(data-label); /* shows column name as micro-heading */
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    color: var(--txt-muted);
   }
 }
 ```
 
-Each `<td>` carries a `data-label` attribute (e.g. `data-label="Workshop"`) that
-CSS `::before` renders as a small uppercase label above the value. This is a native,
-JS-free, accessible technique that works even with JavaScript disabled.
+Each `<td>` has a `data-label` attribute matching its column heading. This technique needs no JavaScript and works even with scripts disabled.
 
 ### Touch targets
 
-Every interactive element — nav links, buttons, dropdown items — has a minimum
-height of 44px on mobile (Apple HIG guideline) to prevent mis-taps. This was
-enforced via padding rules in all CSS modules.
+Every tappable element — nav links, buttons, dropdowns, form fields — has a minimum of **44px** height on mobile (per Apple HIG and Google Material guidance). Enforced through padding in each CSS Module.
 
-### CSS Modules
+### CSS Modules colocation
 
-Every component has its own `.module.css` file co-located beside its `.jsx`. This
-means responsive rules are always findable next to the component they affect, rather
-than searching a monolithic stylesheet.
+Every component's responsive rules live in its own `.module.css` file alongside its `.jsx`. This means someone debugging a layout issue on mobile always finds the relevant styles immediately.
 
 ---
 
@@ -201,78 +171,72 @@ than searching a monolithic stylesheet.
 
 | Decision | Design benefit | Performance cost | Verdict |
 |---|---|---|---|
-| **Google Fonts (Inter)** | Consistent, readable humanist sans-serif | ~40 KB font download on first visit | Acceptable — `display=swap` prevents FOIT; Inter was chosen over a heavier font bundle |
-| **`backdrop-filter: blur()` on navbar** | Glass-like depth without opacity | Triggers a GPU composite layer | Acceptable on supported devices; degrades gracefully to solid background on unsupported browsers |
+| **Google Fonts (Inter)** | Consistent, readable humanist sans-serif vs system fonts | ~40 KB font download on first visit | Acceptable — `display=swap` prevents FOIT; Inter was chosen as the lightest suitable option |
+| **`backdrop-filter: blur()` on navbar** | Glassmorphic depth, content visible through nav | Triggers GPU composite layer | Acceptable — degrades gracefully to solid background on unsupported browsers |
 | **Skeleton loaders on every data fetch** | Perceived faster load vs blank white screen | ~100–200 bytes CSS per component | Net positive for perceived performance |
-| **CSS Modules** | Zero class-name collisions, co-located styles | Small Vite build-time overhead (negligible) | Acceptable |
-| **Client-side search on workshop list** | Instant filter with zero API round-trips | All workshop types fetched on mount | Acceptable — the list is bounded (< 200 records in practice). If it grew to thousands, I'd add server-side filtering |
-| **No Framer Motion runtime** | Zero runtime JS animation overhead | Slightly less fluid physics-based animations | Net positive — CSS transitions handle all motion on this site; removing Framer Motion saves ~140 KB gzipped |
-| **Dark theme only (no light mode toggle)** | Cohesive, intentional design | Users who need light mode have no option | Conscious trade-off. Implementing a theme toggle adds complexity; for a screening task the dark experience is presented as the deliberate choice, not a limitation |
+| **CSS Modules** | Zero class-name collisions, styles colocated with components | Slight Vite build overhead (< 50 ms) | Negligible cost, large developer-experience gain |
+| **Client-side search on workshop list** | Zero-latency filter with no API round-trip | All workshop types fetched on mount | Acceptable — the list is bounded in practice (< 200 records); server-side would be needed at thousands |
+| **No Framer Motion runtime** | *(removed despite installing it)* | Saves 140 KB gzipped | Net positive — CSS transitions handle all required motion on this site |
+| **Dark theme only** | Cohesive, intentional design; AMOLED efficiency | Users preferring light mode have no toggle | Conscious choice — implementing a theme toggle adds significant complexity; the dark experience is defined as the deliberate design, not a limitation |
 
-**Overall bundle:** `342 KB JS / 36.9 KB CSS` — `107 KB JS gzipped`. For an app of this
-feature depth this is lean. The main cost driver is React + React Router (~100 KB gzipped);
-everything else is application code.
+**Final bundle sizes:**  
+`36.9 KB CSS` | `342 KB JS` → **107 KB JS gzipped**
 
 ---
 
 ## What Was the Most Challenging Part, and How Did You Approach It?
 
-### Bridging Django's session auth with a React SPA on a different port
+### Bridging Django session auth with a React SPA on a different port
 
-Django uses session cookies + CSRF tokens. A React dev server on `localhost:5173` is
-treated as a **different origin** from Django on `localhost:8000`, which normally blocks:
-1. Session cookies (SameSite policy)
-2. CSRF header validation (`Referer` mismatch)
+Django uses **session cookies + CSRF tokens**. A React dev server on `localhost:5173` is a **different origin** from Django on `localhost:8000`. This normally blocks:
 
-**My approach — three layers:**
+1. Session cookies (`SameSite` policy rejects cross-origin cookies)
+2. CSRF validation (Django's `Referer` check fails on a mismatched host)
 
-**Layer 1: Vite reverse proxy**
+**The solution — three layers working together:**
+
+**Layer 1 — Vite reverse proxy (eliminates the origin mismatch)**
 
 ```js
 // vite.config.js
-server: {
-  proxy: {
-    '/api':      { target: 'http://127.0.0.1:8000', changeOrigin: true },
-    '/workshop': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-    '/accounts': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-  }
+proxy: {
+  '/api':      { target: 'http://127.0.0.1:8000', changeOrigin: true },
+  '/workshop': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+  '/accounts': { target: 'http://127.0.0.1:8000', changeOrigin: true },
 }
 ```
 
-All requests go to `localhost:5173/api/...` and Vite silently forwards them to Django.
-From the browser's perspective, it's the same origin — no CORS preflight, cookies flow.
+From the browser's perspective, all requests go to `localhost:5173` — same origin. No CORS preflight, cookies flow normally.
 
-**Layer 2: Axios interceptor reads the CSRF cookie**
+**Layer 2 — Axios interceptor reads the CSRF cookie and injects the header**
 
 ```js
 api.interceptors.request.use((config) => {
   const match = document.cookie.match(/csrftoken=([^;]+)/);
-  const token = match ? match[1] : '';
-  if (!['get', 'head', 'options'].includes(config.method)) {
+  const token  = match ? match[1] : '';
+  const safe   = ['get', 'head', 'options', 'trace'];
+  if (!safe.includes(config.method?.toLowerCase())) {
     config.headers['X-CSRFToken'] = token;
   }
   return config;
 });
 ```
 
-Django's `CsrfViewMiddleware` accepts `X-CSRFToken` as an alternative to the
-`csrfmiddlewaretoken` form field. I confirmed this by reading through the Django source
-at `django/middleware/csrf.py` — the middleware checks the header *before* the POST body.
+I traced through Django's `django/middleware/csrf.py` source to confirm that the `X-CSRFToken` header check happens *before* the POST body is parsed — this meant our AJAX POST data (as `URLSearchParams`) would be accepted without needing the `csrfmiddlewaretoken` field in the body.
 
-**Layer 3: `withCredentials: true`**
+**Layer 3 — `withCredentials: true` on the Axios instance**
 
-Even through the proxy, cookies must explicitly be included. Axios requires
-`withCredentials: true` on the instance (not just per request) for session cookies to
-propagate consistently.
+```js
+const api = axios.create({
+  baseURL: '/',
+  withCredentials: true,   // carry session cookie through proxy
+});
+```
 
-**Why this was genuinely tricky:**
+This must be set on the **instance**, not per-request, to ensure the session cookie is sent consistently.
 
-The proxy approach solves origin mismatches cleanly in dev, but testing it requires
-Django's `SESSION_COOKIE_SAMESITE` and `CSRF_COOKIE_SAMESITE` settings to not be
-`'Strict'` (which they aren't by default in Django 3.0). A future improvement would
-be adding `django-cors-headers` configured correctly for production cross-origin
-deployment, but for development-mode + same-origin production the proxy + `withCredentials`
-approach is the cleanest solution with the fewest moving parts.
+**Why it was genuinely tricky:**  
+Each layer is individually well-documented. The challenge was that all three must work *simultaneously* and in the right order. For example: the proxy solves origin but breaks if `withCredentials` is omitted. The CSRF header satisfies Django's middleware but only if the cookie was set first by a GET request. Getting the sequence right required reading Django's middleware source rather than relying on documentation alone.
 
 ---
 
@@ -280,53 +244,54 @@ approach is the cleanest solution with the fewest moving parts.
 
 ```
 workshop_booking/
-├── frontend/                       ← React application (Vite)
+├── frontend/                          ← React application (Vite)
 │   ├── src/
-│   │   ├── api/index.js            ← Axios client: CSRF injection, session cookies
+│   │   ├── api/index.js               ← Axios instance: CSRF injection + session cookies
 │   │   ├── components/
-│   │   │   ├── Navbar.jsx/.css     ← Glassmorphic nav, mobile slide panel, avatar dropdown
-│   │   │   ├── Footer.jsx/.css     ← Minimal FOSSEE footer
-│   │   │   └── StatusBadge.jsx     ← Animated badge (pending pulse, accepted, danger)
+│   │   │   ├── Navbar.jsx + .css      ← Glass navbar, slide-down mobile panel, avatar dropdown
+│   │   │   ├── Footer.jsx + .css      ← Minimal FOSSEE branded footer
+│   │   │   └── StatusBadge.jsx        ← Animated pending/accepted/danger badge
 │   │   ├── pages/
-│   │   │   ├── LoginPage.*         ← Split layout, shake anim, floating labels
-│   │   │   ├── RegisterPage.*      ← Fieldset-sectioned, 2-col grid, email confirm state
-│   │   │   ├── CoordinatorDashboard.* ← Stat cards, card grid, skeleton loader
+│   │   │   ├── LoginPage.*            ← Split layout, floating labels, shake animation
+│   │   │   ├── RegisterPage.*         ← 3-section fieldset form, email confirm state
+│   │   │   ├── CoordinatorDashboard.* ← Stat cards, card-grid, skeleton loader, SVG empty state
 │   │   │   ├── InstructorDashboard.*  ← Same + custom confirm modal (no browser confirm())
-│   │   │   ├── WorkshopTypeList.*  ← Client-side search, card grid, 6-card skeleton
-│   │   │   ├── WorkshopTypeDetail.* ← Detail, T&C, attachments
-│   │   │   ├── ProposeWorkshop.*   ← 3-step: radio-cards → date → T&C + summary
-│   │   │   ├── WorkshopDetail.*    ← Info grid, comment thread, public/private toggle
-│   │   │   └── ProfilePage.*       ← Gradient avatar, inline edit, workshop history
-│   │   ├── App.jsx                 ← Router, session rehydration, protected routes
-│   │   └── index.css               ← Design system tokens + global utilities
-│   └── vite.config.js              ← Dev proxy to Django
+│   │   │   ├── WorkshopTypeList.*     ← Client-side search, card grid, 6-card skeleton
+│   │   │   ├── WorkshopTypeDetail.*   ← Description, T&C, attachments
+│   │   │   ├── ProposeWorkshop.*      ← 3-step: radio-card picker → date → T&C + summary
+│   │   │   ├── WorkshopDetail.*       ← Detail info grid, comment thread, public/private toggle
+│   │   │   └── ProfilePage.*          ← Gradient avatar, inline edit, workshop history table
+│   │   ├── App.jsx                    ← Router, session rehydration on mount, protected routes
+│   │   └── index.css                  ← Design system: tokens, reset, utilities, skeleton, badges
+│   └── vite.config.js                 ← Dev proxy to Django
 │
 ├── workshop_app/
-│   ├── api_views.py                ← NEW: JSON API views (no DRF required)
-│   ├── api_urls.py                 ← NEW: /api/* URL config
-│   ├── views.py                    ← UNCHANGED — original Django template views
-│   └── templates/                  ← UNCHANGED — original templates still work
+│   ├── api_views.py                   ← NEW: JSON API views (no DRF — uses existing models)
+│   ├── api_urls.py                    ← NEW: /api/* URL config
+│   ├── views.py                       ← UNCHANGED — all original Django template views intact
+│   └── templates/                     ← UNCHANGED — original templates still work
 │
 ├── workshop_portal/
-│   └── urls.py                     ← +1 line: url(r'^api/', include('workshop_app.api_urls'))
+│   └── urls.py                        ← +1 line added: include('workshop_app.api_urls')
 │
-└── docs/screenshots/               ← Before/after screenshots
+└── docs/screenshots/                  ← Browser screenshots for README
 ```
 
-**The original Django template views are completely untouched.**
-The React frontend is purely additive.
+> **The original Django template views and templates are completely untouched.**  
+> The React frontend is purely additive — both UIs coexist on the same server.
 
 ---
 
 ## Git History
 
 ```
-74e67a7 docs: README with design rationale, setup, trade-offs, architecture
-6d77553 feat: React router, JSON API views for Django, URL wiring
-dc3a548 feat: workshop list (search+cards), type detail, multi-step propose, detail comments, profile
-fbf6f7d feat: coordinator and instructor dashboards — stat cards, card grid, confirm modal
-2ad0050 feat: login page (split layout + shake anim) and multi-section register form
-dbb5017 feat: API client, Navbar with glassmorphism, Footer, StatusBadge components
-9d48a30 feat: design system — CSS tokens, typography, responsive utilities
-844c4a5 feat: scaffold Vite+React frontend project
+7159b67  docs: final README with screenshots, full design rationale
+74e67a7  docs: README with design rationale, setup, trade-offs, architecture
+6d77553  feat: React router, JSON API views for Django, URL wiring
+dc3a548  feat: workshop list, type detail, multi-step propose, detail, profile pages
+fbf6f7d  feat: coordinator and instructor dashboards — stat cards, card grid, confirm modal
+2ad0050  feat: login page (split layout + shake anim) and multi-section register form
+dbb5017  feat: API client, Navbar glassmorphism, Footer, StatusBadge components
+9d48a30  feat: design system — CSS tokens, typography, responsive utilities
+844c4a5  feat: scaffold Vite+React frontend project
 ```
