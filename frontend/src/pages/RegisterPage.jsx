@@ -4,6 +4,9 @@
  * Registration is only for coordinators (instructors are added by admins).
  * The form uses the same floating-label pattern as login for visual consistency.
  * Fields are grouped logically: account credentials → personal info → institute.
+ *
+ * FIX: FormField is defined at module level (not inside the component) so React
+ * never unmounts/remounts it on each keystroke — which was causing focus loss.
  */
 
 import { useState } from 'react';
@@ -13,40 +16,64 @@ import { UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../api';
 import styles from './RegisterPage.module.css';
 
-const POSITIONS = [
-  { value: 'coordinator', label: 'Coordinator (default)' },
-];
+/**
+ * Module-level field component — stable identity across renders.
+ * Receives value, error, and onChange as explicit props instead of
+ * closing over parent state, which caused React to treat it as a new
+ * component type on every parent re-render (= unmount + remount = focus loss).
+ */
+function FormField({ name, label, type = 'text', autoComplete, value, error, onChange }) {
+  return (
+    <div className={`field-wrap ${value ? 'has-value' : ''}`}>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        autoComplete={autoComplete}
+        value={value}
+        onChange={onChange}
+      />
+      <label htmlFor={name}>{label}</label>
+      {error && (
+        <p className="field-error">
+          <AlertCircle size={12} /> {error}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [step, setStep]     = useState(0);  // 0: form, 1: email sent
+  const [step, setStep]     = useState(0);   // 0: form, 1: email sent
   const [loading, setLoad]  = useState(false);
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
-    username: '',   password: '',   confirm: '',
-    first_name: '', last_name: '',  email: '',
-    phone_number: '', institute: '', department: '',
+    username: '',     password: '',   confirm: '',
+    first_name: '',   last_name: '',  email: '',
+    phone_number: '', institute: '',  department: '',
     position: 'coordinator', location: '', state: '',
   });
 
-  function set(field) {
+  function handleChange(field) {
     return (e) => {
-      setForm((f) => ({ ...f, [field]: e.target.value }));
+      const value = e.target.value;
+      setForm((f) => ({ ...f, [field]: value }));
       setErrors((er) => ({ ...er, [field]: undefined, _global: undefined }));
     };
   }
 
   function validate() {
     const errs = {};
-    if (!form.username)    errs.username   = 'Username is required';
-    if (!form.password)    errs.password   = 'Password is required';
+    if (!form.username)     errs.username     = 'Username is required';
+    if (!form.password)     errs.password     = 'Password is required';
     if (form.password !== form.confirm)
-                           errs.confirm    = 'Passwords do not match';
-    if (!form.email)       errs.email      = 'Email is required';
-    if (!form.first_name)  errs.first_name = 'First name is required';
-    if (!form.last_name)   errs.last_name  = 'Last name is required';
-    if (!form.institute)   errs.institute  = 'Institute is required';
+                            errs.confirm      = 'Passwords do not match';
+    if (!form.email)        errs.email        = 'Email is required';
+    if (!form.first_name)   errs.first_name   = 'First name is required';
+    if (!form.last_name)    errs.last_name    = 'Last name is required';
+    if (!form.institute)    errs.institute    = 'Institute is required';
     if (!form.phone_number) errs.phone_number = 'Phone number is required';
     return errs;
   }
@@ -59,14 +86,26 @@ export default function RegisterPage() {
     setLoad(true);
     try {
       const payload = new URLSearchParams(form);
-      await api.post('/accounts/register/', payload);
+      await api.post('/workshop/register/', payload);
       setStep(1);
     } catch (err) {
-      setErrors({ _global: err.message });
+      setErrors({ _global: err.response?.data?.error || err.message });
     } finally {
       setLoad(false);
     }
   }
+
+  // Shorthand so JSX stays readable
+  const f = (name, label, extra = {}) => (
+    <FormField
+      name={name}
+      label={label}
+      value={form[name]}
+      error={errors[name]}
+      onChange={handleChange(name)}
+      {...extra}
+    />
+  );
 
   if (step === 1) {
     return (
@@ -86,15 +125,6 @@ export default function RegisterPage() {
       </main>
     );
   }
-
-  const F = ({ name, label, type = 'text', autoComplete }) => (
-    <div className={`field-wrap ${form[name] ? 'has-value' : ''}`}>
-      <input id={name} name={name} type={type} autoComplete={autoComplete}
-             value={form[name]} onChange={set(name)} />
-      <label htmlFor={name}>{label}</label>
-      {errors[name] && <p className="field-error"><AlertCircle size={12} />{errors[name]}</p>}
-    </div>
-  );
 
   return (
     <>
@@ -121,40 +151,50 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} noValidate>
+            {/* ── Account Credentials ─────────────────── */}
             <fieldset className={styles.section}>
               <legend className={styles.legend}>Account Credentials</legend>
-              <F name="username"    label="Username"         autoComplete="username" />
+              {f('username', 'Username', { autoComplete: 'username' })}
               <div className={styles.twoCol}>
-                <F name="password" label="Password"  type="password" autoComplete="new-password" />
-                <F name="confirm"  label="Confirm Password" type="password" autoComplete="new-password" />
+                {f('password', 'Password',         { type: 'password', autoComplete: 'new-password' })}
+                {f('confirm',  'Confirm Password',  { type: 'password', autoComplete: 'new-password' })}
               </div>
             </fieldset>
 
+            {/* ── Personal Information ─────────────────── */}
             <fieldset className={styles.section}>
               <legend className={styles.legend}>Personal Information</legend>
               <div className={styles.twoCol}>
-                <F name="first_name" label="First Name" autoComplete="given-name" />
-                <F name="last_name"  label="Last Name"  autoComplete="family-name" />
+                {f('first_name', 'First Name', { autoComplete: 'given-name' })}
+                {f('last_name',  'Last Name',  { autoComplete: 'family-name' })}
               </div>
-              <F name="email"        label="Email Address" type="email" autoComplete="email" />
-              <F name="phone_number" label="Phone Number"  type="tel"   autoComplete="tel" />
+              {f('email',        'Email Address', { type: 'email', autoComplete: 'email' })}
+              {f('phone_number', 'Phone Number',  { type: 'tel',   autoComplete: 'tel' })}
             </fieldset>
 
+            {/* ── Institute Details ────────────────────── */}
             <fieldset className={styles.section}>
               <legend className={styles.legend}>Institute Details</legend>
-              <F name="institute"  label="Institute Name" />
+              {f('institute', 'Institute Name')}
               <div className={styles.twoCol}>
-                <F name="department" label="Department" />
-                <F name="position"   label="Position / Role" />
+                {f('department', 'Department')}
+                {f('position',   'Position / Role')}
               </div>
               <div className={styles.twoCol}>
-                <F name="location" label="City" autoComplete="address-level2" />
-                <F name="state"    label="State" autoComplete="address-level1" />
+                {f('location', 'City',  { autoComplete: 'address-level2' })}
+                {f('state',    'State', { autoComplete: 'address-level1' })}
               </div>
             </fieldset>
 
-            <button type="submit" className={`btn btn-primary ${styles.submit}`} disabled={loading}>
-              {loading ? <span className={styles.spinner} /> : <><UserPlus size={16} /> Create Account</>}
+            <button
+              type="submit"
+              className={`btn btn-primary ${styles.submit}`}
+              disabled={loading}
+            >
+              {loading
+                ? <span className={styles.spinner} aria-hidden="true" />
+                : <><UserPlus size={16} /> Create Account</>
+              }
             </button>
           </form>
 
