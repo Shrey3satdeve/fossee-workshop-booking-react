@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', views.index),
     url(r'^workshop/', include('workshop_app.urls')),
+    url(r'^api/', include('workshop_app.api_urls')),   # JSON API for React frontend
     url(r'^reset/', include('django.contrib.auth.urls')),
     url(r'^page/', include('cms.urls')),
     url(r'^statistics/', include('statistics_app.urls')),
