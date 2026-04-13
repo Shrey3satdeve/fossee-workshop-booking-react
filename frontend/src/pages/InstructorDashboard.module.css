@@ -1,0 +1,85 @@
+/* InstructorDashboard.module.css — confirm modal styles */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: hsl(0 0% 0% / 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: calc(var(--sp) * 3);
+  animation: fade-in 0.2s ease both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: calc(var(--sp) * 5);
+  max-width: 440px;
+  width: 100%;
+  position: relative;
+  animation: slide-up 0.25s var(--ease-out) both;
+  text-align: center;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.closeBtn {
+  position: absolute;
+  top: calc(var(--sp) * 2);
+  right: calc(var(--sp) * 2);
+  color: var(--txt-muted);
+  padding: calc(var(--sp) * 0.5);
+  border-radius: var(--r-sm);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.closeBtn:hover {
+  background: var(--bg-hover);
+  color: var(--txt-primary);
+}
+
+.modalIcon {
+  margin-bottom: calc(var(--sp) * 2);
+}
+
+.modal h2 {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--txt-primary);
+  margin-bottom: calc(var(--sp) * 2);
+}
+
+.modal p {
+  color: var(--txt-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  margin-bottom: calc(var(--sp) * 2);
+}
+
+.warning {
+  background: hsl(38 92% 55% / 0.10);
+  border: 1px solid hsl(38 92% 55% / 0.25);
+  border-radius: var(--r-md);
+  padding: calc(var(--sp) * 1.5);
+  color: var(--clr-warning) !important;
+  font-size: var(--fs-xs) !important;
+}
+
+.modalActions {
+  display: flex;
+  gap: calc(var(--sp) * 2);
+  justify-content: center;
+  margin-top: calc(var(--sp) * 4);
+}

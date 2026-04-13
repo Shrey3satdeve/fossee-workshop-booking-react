@@ -1,0 +1,132 @@
+/* Dashboard.module.css — shared between Coordinator and Instructor dashboards */
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(var(--sp) * 3);
+  margin-bottom: calc(var(--sp) * 6);
+  flex-wrap: wrap;
+}
+
+.heroTitle {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--txt-primary);
+  line-height: 1.2;
+  margin-bottom: calc(var(--sp));
+}
+
+.heroTitle span { color: var(--clr-primary); }
+
+.heroSub {
+  color: var(--txt-muted);
+  font-size: var(--fs-base);
+}
+
+/* Stat row */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: calc(var(--sp) * 2);
+  margin-bottom: calc(var(--sp) * 8);
+}
+
+.statCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: calc(var(--sp) * 3) calc(var(--sp) * 3);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--sp) * 2.5);
+  transition: transform var(--t-base) var(--ease-out), box-shadow var(--t-base);
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+.statIcon {
+  width: 44px; height: 44px;
+  border-radius: var(--r-md);
+  background: hsl(218 90% 58% / 0.12);
+  color: var(--clr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statVal {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--txt-primary);
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: var(--fs-xs);
+  color: var(--txt-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: calc(var(--sp) * 0.5);
+}
+
+/* Workshop card */
+.wCard {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--sp) * 1.5);
+}
+
+.wCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp);
+}
+
+.wName {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--txt-primary);
+  line-height: 1.3;
+}
+
+.wCardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--sp) * 0.8);
+}
+
+.wCardMeta span {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--sp));
+  font-size: var(--fs-sm);
+  color: var(--txt-muted);
+}
+
+/* Instructor-specific: accept button on card */
+.acceptBtn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+/* Action row for instructor */
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--sp) * 1.5);
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .hero { flex-direction: column; }
+  .heroTitle { font-size: var(--fs-lg); }
+  .stats { grid-template-columns: 1fr 1fr; }
+}
